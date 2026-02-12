@@ -14,7 +14,7 @@ OC-Memory is a sidecar memory system that runs alongside OpenClaw. **Core benefi
 
 ### 💰 Token Savings (The Most Important Feature!)
 
-Comparison: Traditional approach vs OC-Memory:
+**Estimated comparison** (Based on Mastra OM benchmarks and 5-10x compression ratio):
 
 | Usage Scenario | Traditional | OC-Memory | Savings | Cost Reduction |
 |----------------|-------------|-----------|---------|----------------|
@@ -23,7 +23,11 @@ Comparison: Traditional approach vs OC-Memory:
 | **1-year history** | 2,000,000 tokens | 200,000 tokens | 🔥 90% | $59.40 → $5.94 |
 | **100 requests/day** | ~300,000/month | ~30,000/month | 🔥 90% | ~$9/month → ~$0.90/month |
 
-**Based on OpenAI API pricing (gpt-4o-mini: $0.15/1M tokens)**
+**📌 Important Notes:**
+- **Source**: Mastra Observational Memory benchmark (94.87% compression achieved)
+- **Assumptions**: 5-10x compression ratio, OpenAI gpt-4o-mini ($0.15/1M tokens)
+- **Actual results**: May vary by project and conversation patterns
+- **Validation needed**: Test in your environment to verify actual savings
 
 ### ✨ How Does It Save 90%?
 
