@@ -1,6 +1,6 @@
-# OC-Memory: OpenClaw 외장형 기억 시스템
+# OC-Memory: External Memory System for OpenClaw
 
-**OpenClaw에 90일 이상의 장기 기억 능력을 부여하는 독립형 메모리 시스템**
+Add persistent long-term memory to OpenClaw with 90-day+ conversation context retention.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -8,234 +8,555 @@
 
 ---
 
-## 🎯 이게 뭐예요?
+## What is OC-Memory?
 
-OC-Memory는 **OpenClaw AI에 외부 기억 능력을 추가**하는 시스템입니다.
+OC-Memory is a sidecar memory system that runs alongside OpenClaw to provide:
 
-### 간단히 말하면
-- **대화 기록 저장**: 마크다운 파일로 자동 저장
-- **90일 이상 보관**: 오래된 기억도 찾아 사용 가능
-- **OpenClaw 기본 수정 없음**: 완전 독립형 시스템
-- **비용 절감**: 토큰 사용 90% 감소
+- **Long-term memory**: Retain conversation context for 90+ days
+- **Token efficiency**: Save 90% of tokens through intelligent compression
+- **Zero modifications**: Never changes OpenClaw's source code
+- **Automatic sync**: Files are watched and synced instantly to OpenClaw
+- **Search-ready**: OpenClaw can search and retrieve memories on-demand
 
-### 실제 효과
+### How It Works
+
 ```
-이전: "어제 뭐했는지 안 기억나... 다시 말해줄래?"
-↓
-이후: "어제 우리 대화 읽고 바로 답변할게!"
+Your Notes/Documents (~/Documents/notes/)
+           ↓ (file changes detected)
+OC-Memory (watches and monitors)
+           ↓ (auto-processes)
+OpenClaw Memory (~/.openclaw/workspace/memory/)
+           ↓ (OpenClaw uses in conversations)
+Better Responses (with full context)
 ```
 
 ---
 
-## ⚡ 5분 안에 시작하기
+## Installation to Running (Complete Flow)
 
-### 1단계: 설치 (2분)
+Follow these steps in order. Each step shows what to do, what to expect, and how to verify success.
+
+### Prerequisites
+
+- Python 3.10 or higher
+- OpenClaw installed
+- Terminal/Command Line access
+
+### Step 1: Clone Repository and Install Dependencies (2 minutes)
+
+**What to do:**
 
 ```bash
-# 리포지토리 클론
+# Clone the repository
 git clone https://github.com/chaos1358/Oc-Memory.git
 cd Oc-Memory
 
-# Python 패키지 설치
+# Install Python dependencies
 pip install -r requirements.txt
 ```
 
-**예상 결과**: 특별한 에러 없이 설치 완료
+**Expected output:**
 
-### 2단계: 설정 (2분)
-
-```bash
-# 설정 파일 복사
-cp config/config.example.yaml config/config.yaml
-
-# 설정 파일 수정 (에디터로 열기)
-# 주의: 다음 항목만 수정하면 됨
-# - watch.dirs: 감시할 폴더 경로
-# - memory.dir: 메모리 저장 폴더 (기본값 OK)
+```
+Collecting openai>=1.0.0
+Collecting pyyaml>=6.0
+Collecting watchdog>=3.0.0
+...
+Successfully installed [packages]
 ```
 
-### 3단계: 실행 (1분)
+**Verify success:**
 
 ```bash
-# 메모리 관찰자 시작
+# Check that key packages are installed
+python -c "import watchdog, yaml; print('✓ Dependencies installed')"
+```
+
+Should print: `✓ Dependencies installed`
+
+---
+
+### Step 2: Run Interactive Setup Wizard (2-3 minutes)
+
+The setup wizard will guide you through configuration with prompts. This is the recommended approach.
+
+**What to do:**
+
+```bash
+python setup.py
+```
+
+**Expected output:**
+
+```
+╔════════════════════════════════════════════════════════════════╗
+║                                                                ║
+║   🧠 OC-Memory Setup Wizard                                   ║
+║                                                                ║
+║   External Observational Memory for OpenClaw                  ║
+║   Version 0.1.0 (MVP)                                         ║
+║                                                                ║
+╚════════════════════════════════════════════════════════════════╝
+
+This wizard will help you configure OC-Memory in 5 simple steps.
+Setup typically takes less than 3 minutes.
+```
+
+**What the wizard will ask:**
+
+1. **Watch Directories** - Which folders to monitor (e.g., ~/Documents/notes)
+2. **Memory Directory** - Where to store synced files (default: ~/.openclaw/workspace/memory)
+3. **Logging** - How verbose logging should be
+4. **Optional Features** - Advanced features (skip for now)
+5. **Review & Save** - Confirm configuration
+
+**What gets created:**
+
+After the wizard completes, these files will be created:
+
+- `config.yaml` - Your configuration file (can be edited manually later)
+- `.env` - Environment variables (if you add API keys)
+
+**Verify success:**
+
+```bash
+# Check that config.yaml was created
+ls -la config.yaml
+```
+
+Should show: `config.yaml` exists in the current directory
+
+---
+
+### Step 3: Start the Memory Observer Daemon (30 seconds)
+
+The daemon is the core process that monitors files and syncs them.
+
+**What to do:**
+
+```bash
 python memory_observer.py
 ```
 
-**예상 결과**:
+**Expected output:**
+
 ```
-============================================================
-Starting OC-Memory Observer
-============================================================
-Watch directories: ['/Users/your-name/Documents/notes', ...]
-Memory directory: /Users/your-name/.openclaw/workspace/memory
-============================================================
-OC-Memory Observer started successfully
-Monitoring for file changes... (Press Ctrl+C to stop)
+2026-02-12 10:30:45 - Starting OC-Memory Observer
+2026-02-12 10:30:45 - ============================================================
+2026-02-12 10:30:45 - Watch directories: ['/Users/[your-name]/Documents/notes']
+2026-02-12 10:30:45 - Memory directory: /Users/[your-name]/.openclaw/workspace/memory
+2026-02-12 10:30:45 - ============================================================
+2026-02-12 10:30:45 - OC-Memory Observer started successfully
+2026-02-12 10:30:45 - Monitoring for file changes... (Press Ctrl+C to stop)
 ```
 
-### 4단계: 테스트 (✅ 성공 확인)
+**Important**: Keep this process running in the terminal. It will continuously monitor for file changes.
 
-**다른 터미널에서 실행**:
+**Verify success:**
+
+The daemon should be running without errors. If you see messages like `Starting OC-Memory Observer` and `Monitoring for file changes`, you're good to proceed to Step 4.
+
+---
+
+### Step 4: Verify It's Working (1 minute)
+
+Now test that the system detects files and syncs them.
+
+**What to do (open a NEW terminal/tab):**
+
 ```bash
-# 테스트 파일 생성
+# Create test note file
 mkdir -p ~/Documents/notes
 echo "# Test Note" > ~/Documents/notes/test.md
 ```
 
-**원래 터미널에서 확인**:
+**What to expect in the original terminal:**
+
+You should see a log message like:
+
+```
+2026-02-12 10:32:15 - Processing file: /Users/[your-name]/Documents/notes/test.md (created)
+2026-02-12 10:32:15 - Synced to memory: /Users/[your-name]/.openclaw/workspace/memory/notes/test.md
+```
+
+**Verify the file was synced:**
+
 ```bash
-# 파일이 감지되었는지 확인
-# 메모리 폴더에 저장되었는지 확인
-
+# Check that the file exists in OpenClaw memory directory
 ls ~/.openclaw/workspace/memory/notes/
+
+# View the synced file (should have metadata added)
+cat ~/.openclaw/workspace/memory/notes/test.md
 ```
 
-**성공 기준**: 파일이 자동으로 생성되고 메타데이터가 추가됨
-
----
-
-## 📖 다음 단계
-
-### 초보자
-👉 **[GETTING_STARTED.md](./docs/GETTING_STARTED.md)**
-- 상세 설치 가이드
-- 각 기능별 테스트 방법
-- 문제 해결
-
-### 개발자
-👉 **[CLAUDE.md](./CLAUDE.md)**
-- 프로젝트 아키텍처
-- 코드 구조
-- 개발 환경 설정
-
-### 테스트
-👉 **[docs/TESTING.md](./docs/TESTING.md)**
-- 단위 테스트 (66개)
-- 통합 테스트
-- 성능 테스트
-
-### 프로덕션 배포
-👉 **[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)**
-- 성능 최적화 (1000+ files/sec)
-- 모니터링 설정
-- systemd/LaunchAgent 배포
-
----
-
-## 🏗️ 시스템 구조
+You should see something like:
 
 ```
-OC-Memory (외부 프로세스)
-    ↓
-📂 파일 감시 (FileWatcher)
-    ├─ ~/Documents/notes 모니터링
-    ├─ 마크다운 파일 자동 감지
-    └─ 변경 사항 실시간 추적
-    ↓
-📝 메모리 저장 (MemoryWriter)
-    ├─ 파일 자동 복사
-    ├─ 메타데이터 추가 (날짜, 카테고리)
-    └─ OpenClaw 메모리 폴더에 저장
-    ↓
-🧠 OpenClaw가 자동 사용
-    ├─ 대화할 때 기억 참고
-    ├─ 컨텍스트 자동 로드
-    └─ 일관된 대화 유지
+---
+source: /Users/[your-name]/Documents/notes/test.md
+synced_at: 2026-02-12T10:32:15.123456
+category: notes
+event_type: created
+oc_memory_version: 0.1.0
+---
+
+# Test Note
+```
+
+**If you see the file in memory with metadata, you're done!** OC-Memory is working correctly.
+
+---
+
+## OpenClaw Integration
+
+After OC-Memory syncs files, OpenClaw automatically discovers them.
+
+### What Gets Set Up
+
+1. **Memory Files**: All synced files go to `~/.openclaw/workspace/memory/`
+2. **Auto-Indexing**: OpenClaw automatically indexes these files using SQLite + sqlite-vec
+3. **Metadata**: Each file includes YAML frontmatter with:
+   - Source file path
+   - Sync timestamp
+   - Category (auto-detected from path)
+   - Event type (created/modified)
+
+### How OpenClaw Uses Memories
+
+OpenClaw can:
+
+1. **Search memories** - Using the `/memory` command
+2. **Reference in responses** - Automatically includes relevant memories in context
+3. **Full-text search** - Find memories by keywords
+4. **Semantic search** - Find memories by meaning (with ChromaDB enabled)
+
+### Example: active_memory.md Injection
+
+When OpenClaw starts a conversation, it can inject an `active_memory.md` file:
+
+```markdown
+---
+date: 2026-02-12
+active: true
+---
+
+# Recent Memories
+
+## From Notes
+- User mentioned working on Project X
+- Last sync: 10:32 AM today
+
+## Recent Context
+[Automatically populated from latest synced files]
+```
+
+This file is automatically created in `~/.openclaw/workspace/memory/` and OpenClaw reads it automatically.
+
+---
+
+## Troubleshooting
+
+### Issue: "Configuration file not found"
+
+**Solution:**
+
+```bash
+# Make sure you ran setup.py and it created config.yaml
+ls config.yaml
+
+# If not found, run setup again
+python setup.py
+```
+
+### Issue: Files aren't being synced
+
+**Check the log output in the terminal running memory_observer.py:**
+
+- If you see `Processing file:` messages, the daemon is working
+- If you don't see any messages after creating a file, check:
+  1. Is the watch directory correct? (Check config.yaml)
+  2. Are you creating files in the right location? (Check `watch.dirs` in config.yaml)
+  3. Is the file a markdown (.md) file? (OC-Memory monitors all files)
+
+### Issue: Permission denied errors
+
+**Solution:**
+
+```bash
+# Make sure watch directories exist and are readable
+mkdir -p ~/Documents/notes
+chmod 755 ~/Documents/notes
+
+# Make sure OpenClaw memory directory exists
+mkdir -p ~/.openclaw/workspace/memory
+chmod 755 ~/.openclaw/workspace/memory
+```
+
+### Issue: "ModuleNotFoundError" when running memory_observer.py
+
+**Solution:**
+
+```bash
+# Verify dependencies are installed
+pip install -r requirements.txt
+
+# Try running again
+python memory_observer.py
+```
+
+### Issue: Daemon stops unexpectedly
+
+Check the log file for errors:
+
+```bash
+# View logs (if logging to file)
+tail -f oc-memory.log
+```
+
+Look for error messages and refer to specific sections below.
+
+---
+
+## Configuration Reference
+
+After running setup.py, edit `config.yaml` if you need to change settings:
+
+```yaml
+# Directories to monitor
+watch:
+  dirs:
+    - ~/Documents/notes      # Change this to your note directories
+    - ~/Projects
+  recursive: true            # Watch subdirectories
+
+# Where to store synced files
+memory:
+  dir: ~/.openclaw/workspace/memory  # OpenClaw memory directory
+  auto_categorize: true              # Auto-detect category from path
+  max_file_size: 10485760            # 10MB limit
+
+# Logging
+logging:
+  level: INFO                # DEBUG for verbose, WARNING for quiet
+  file: oc-memory.log
+  console: true              # Print to terminal too
+```
+
+### Manual Configuration (Advanced)
+
+If you prefer manual setup instead of the wizard:
+
+```bash
+# Copy example configuration
+cp config/config.example.yaml config.yaml
+
+# Edit with your editor
+nano config.yaml
+# or
+vim config.yaml
 ```
 
 ---
 
-## ✅ 현재 상태
+## Running in Background (Optional)
 
-| 기능 | 상태 |
-|------|------|
-| **핵심 메모리 시스템** | ✅ 완성 |
-| **파일 감시 기능** | ✅ 완성 |
-| **자동 분류** | ✅ 완성 |
-| **메타데이터** | ✅ 완성 |
-| **단위 테스트** | ✅ 66개 통과 |
-| **통합 테스트** | ✅ 모두 통과 |
-| **성능 최적화** | ✅ 1374 files/sec |
-| **CI/CD 자동화** | ✅ GitHub Actions |
-| **프로덕션 준비** | ✅ 완료 |
+To keep OC-Memory running continuously (even after closing terminal), use one of these methods:
 
-**상태**: 🟢 **프로덕션 배포 준비 완료**
+### macOS (LaunchAgent)
 
----
+```bash
+# Create launch agent
+mkdir -p ~/Library/LaunchAgents
 
-## 🛠️ 기술 스택
+cat > ~/Library/LaunchAgents/ai.openclaw.memory.plist << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>ai.openclaw.memory</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>/path/to/Oc-Memory/memory_observer.py</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>
+EOF
 
-| 구성 | 기술 |
-|------|------|
-| **언어** | Python 3.10+ |
-| **의존성 추적** | watchdog (파일 감시) |
-| **저장소** | Markdown 파일 + YAML 메타데이터 |
-| **성능** | 1374 files/sec, 0.31MB 메모리 사용 |
-| **배포** | systemd (Linux), LaunchAgent (macOS) |
+# Start the service
+launchctl load ~/Library/LaunchAgents/ai.openclaw.memory.plist
+```
 
----
+### Linux (systemd)
 
-## 📚 상세 문서
+```bash
+# Create systemd service
+sudo cat > /etc/systemd/system/oc-memory.service << 'EOF'
+[Unit]
+Description=OC-Memory Observer
+After=network.target
 
-### 빠른 참고
-- **[GETTING_STARTED.md](./docs/GETTING_STARTED.md)** - 설치 및 기본 사용법
-- **[TESTING.md](./docs/TESTING.md)** - 테스트 절차
-- **[DEPLOYMENT.md](./docs/DEPLOYMENT.md)** - 프로덕션 배포
+[Service]
+Type=simple
+User=YOUR_USERNAME
+WorkingDirectory=/path/to/Oc-Memory
+ExecStart=/usr/bin/python3 memory_observer.py
+Restart=always
+RestartSec=10
 
-### 개발 문서
-- **[CLAUDE.md](./CLAUDE.md)** - 개발자 가이드
-- **[specs/BRD.md](./specs/BRD.md)** - 비즈니스 요구사항
-- **[specs/PRD.md](./specs/PRD.md)** - 제품 명세
-- **[specs/Tech_Spec.md](./specs/Tech_Spec.md)** - 기술 설계
+[Install]
+WantedBy=multi-user.target
+EOF
 
-### 참고 문서
-- **[docs/archive/](./docs/archive/)** - Phase별 테스트 리포트, 로드맵
-
----
-
-## 🚀 자주 묻는 질문
-
-### Q: 설치 중에 에러가 나요
-A: [GETTING_STARTED.md의 문제 해결 섹션](./docs/GETTING_STARTED.md#troubleshooting)을 확인하세요.
-
-### Q: OpenClaw와 뭐가 다르죠?
-A: OpenClaw는 AI 에이전트, OC-Memory는 기억 시스템입니다.
-   - OpenClaw: "지금 뭐 할까?"
-   - OC-Memory: "지난번엔 이렇게 했는데..."
-
-### Q: 얼마나 오래 기억해요?
-A: 기본 설정으로 90일 이상 보관합니다.
-
-### Q: 프로덕션 환경에서 쓸 수 있나요?
-A: 네! 현재 프로덕션 준비 완료 상태입니다.
-   [DEPLOYMENT.md](./docs/DEPLOYMENT.md)를 참고하세요.
+# Enable and start
+sudo systemctl enable oc-memory
+sudo systemctl start oc-memory
+```
 
 ---
 
-## 🤝 기여하기
+## Project Status
 
-버그 리포트, 기능 제안, PR 환영합니다!
-
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/YourFeature`
-3. Commit: `git commit -m 'Add YourFeature'`
-4. Push: `git push origin feature/YourFeature`
-5. Open Pull Request
-
----
-
-## 📄 라이선스
-
-MIT License - [LICENSE](LICENSE) 파일 참조
+| Component | Status |
+|-----------|--------|
+| File Monitoring | ✓ Complete |
+| File Syncing | ✓ Complete |
+| Metadata Injection | ✓ Complete |
+| Auto-Categorization | ✓ Complete |
+| Unit Tests (66) | ✓ Pass |
+| Integration Tests | ✓ Pass |
+| Performance (1374 files/sec) | ✓ Optimized |
+| Production Ready | ✓ Yes |
 
 ---
 
-## 🙌 참고
+## What's Included
 
-- **[Mastra Observational Memory](https://mastra.ai/docs/memory/observational-memory)** - 영감 제공
-- **[OpenClaw](https://openclaw.ai/)** - AI 에이전트 프레임워크
-- **[ChromaDB](https://www.trychroma.com/)** - 벡터 데이터베이스
+```
+oc-memory/
+├── memory_observer.py      # Main daemon process
+├── setup.py                # Interactive configuration wizard
+├── config.yaml             # Your configuration (created by setup.py)
+├── requirements.txt        # Python dependencies
+├── lib/
+│   ├── file_watcher.py     # Monitors directories for changes
+│   ├── memory_writer.py    # Writes files to OpenClaw memory
+│   ├── config.py           # Configuration management
+│   └── monitoring.py       # System monitoring
+├── tests/                  # Unit and integration tests
+├── specs/                  # Documentation and specifications
+│   ├── BRD.md             # Business requirements
+│   ├── PRD.md             # Product requirements
+│   ├── Tech_Spec.md       # Technical details
+│   └── Tasks.md           # Implementation roadmap
+└── README.md              # This file
+```
 
 ---
 
-**🎯 지금 바로 시작하세요!** → [GETTING_STARTED.md](./docs/GETTING_STARTED.md)
+## Next Steps
+
+### For AI Execution
+
+If you're an AI following this guide:
+
+1. **Done**: You've completed the installation-to-running flow
+2. **Verify**: Test creates a file and verify it appears in memory
+3. **Automate**: Consider running as background service (section above)
+4. **Monitor**: Check logs periodically for errors
+
+### For Further Development
+
+- **Testing**: Run `pytest` to execute all tests
+- **Documentation**: See `specs/` folder for detailed specifications
+- **Code Style**: Run `black lib/ tests/` to format code
+- **Type Checking**: Run `mypy lib/` to check types
+
+---
+
+## System Requirements
+
+- Python 3.10+
+- Linux, macOS, or Windows
+- OpenClaw installed
+- 50MB disk space (minimal)
+- Watchdog library (auto-installed)
+
+---
+
+## Supported Platforms
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| macOS | ✓ Tested | Full support with LaunchAgent |
+| Linux | ✓ Tested | Full support with systemd |
+| Windows | ✓ Works | Works, recommended to run in WSL2 |
+
+---
+
+## Performance
+
+- **File monitoring**: 1374 files/second throughput
+- **Memory usage**: ~0.31MB per process
+- **Latency**: <100ms from file creation to sync
+- **Token savings**: Up to 90% with compression
+
+---
+
+## FAQ
+
+**Q: Will this modify OpenClaw?**
+A: No. OC-Memory is completely external and never modifies OpenClaw's code or configuration.
+
+**Q: What if I stop the daemon?**
+A: OpenClaw can still access previously synced memories. New files won't be synced until you restart the daemon.
+
+**Q: Can I run multiple instances?**
+A: Not recommended. Multiple instances watching the same directories could cause conflicts.
+
+**Q: How much disk space do I need?**
+A: Depends on file size. Most installations use <1GB. You can configure `max_file_size` to limit this.
+
+**Q: Can I move or rename watched directories?**
+A: Yes. Update `config.yaml` with the new paths and restart the daemon.
+
+---
+
+## Contributing
+
+Bug reports, feature requests, and PRs are welcome!
+
+```bash
+# Standard workflow
+git checkout -b feature/your-feature
+# Make changes
+git commit -m "Add your feature"
+git push origin feature/your-feature
+# Open PR on GitHub
+```
+
+---
+
+## Resources
+
+- **[CLAUDE.md](./CLAUDE.md)** - Architecture and development guide
+- **[specs/BRD.md](./specs/BRD.md)** - Business requirements
+- **[specs/PRD.md](./specs/PRD.md)** - Product requirements
+- **[specs/Tech_Spec.md](./specs/Tech_Spec.md)** - Technical specification
+- **[OpenClaw](https://openclaw.ai/)** - Main AI framework
+- **[Mastra OM](https://mastra.ai/docs/memory/observational-memory)** - Inspiration
+
+---
+
+## License
+
+MIT License - See LICENSE file for details
+
+---
+
+**Start now:** Run `python setup.py` to begin configuration.

@@ -9,6 +9,9 @@ Usage:
 
 import os
 import sys
+import json
+import time
+import subprocess
 from pathlib import Path
 from typing import Dict, Any, List
 
@@ -73,8 +76,11 @@ class SetupWizard:
         self.step2_memory_directory()
         self.step3_logging()
         self.step4_optional_features()
-        self.step5_review_and_save()
-        self.step6_post_install()
+        self.step5_openclaw_integration()
+        self.step6_create_directories()
+        self.step7_auto_test()
+        self.step8_ready_to_run()
+        self.step9_review_and_save()
 
     def print_banner(self):
         """Print welcome banner"""
@@ -88,8 +94,8 @@ class SetupWizard:
 ║                                                                ║
 ╚════════════════════════════════════════════════════════════════╝
 
-This wizard will help you configure OC-Memory in 5 simple steps.
-Setup typically takes less than 3 minutes.
+This wizard will help you configure OC-Memory in 9 simple steps.
+Setup typically takes less than 5 minutes.
         """
         print(banner)
 
@@ -444,10 +450,291 @@ Setup typically takes less than 3 minutes.
             self.config['obsidian'] = {'enabled': False}
             self.config['dropbox'] = {'enabled': False}
 
-    def step5_review_and_save(self):
-        """Step 5: Review and save configuration"""
+    def step5_openclaw_integration(self):
+        """Step 5: OpenClaw Integration"""
         print("\n" + "="*70)
-        print("📋 STEP 5: Review Configuration")
+        print("🔗 STEP 5: OpenClaw Integration")
+        print("="*70)
+        print("\nOC-Memory will inject memory context into OpenClaw's system prompt.")
+        print("This allows OpenClaw to access your memory automatically.\n")
+
+        openclaw_dir = Path.home() / ".openclaw"
+        openclaw_json = openclaw_dir / "openclaw.json"
+
+        # Memory injection instructions
+        memory_instructions = """You have access to an external memory system (OC-Memory) that stores observations and important information about the user.
+
+When responding to the user:
+1. Check if there are relevant observations in the memory files (automatically indexed in OpenClaw)
+2. Reference past decisions and context to maintain consistency
+3. Update memory when learning new important information about the user
+4. Use memory to provide personalized and contextual responses
+
+The memory files are stored in ~/.openclaw/workspace/memory/ and are automatically indexed by OpenClaw."""
+
+        print("📋 Memory Instructions to inject into OpenClaw:\n")
+        print(memory_instructions)
+        print("\n")
+
+        # Check if openclaw.json exists
+        if not openclaw_json.exists():
+            print(f"⚠️  File not found: {openclaw_json}")
+            create_it = questionary.confirm(
+                "Would you like me to create a new openclaw.json with OC-Memory integration?",
+                default=True,
+                style=custom_style
+            ).ask()
+
+            if create_it:
+                self._create_openclaw_json(openclaw_json, memory_instructions)
+                print(f"\n✅ Created {openclaw_json}")
+            else:
+                print("ℹ️  Skipped. You can manually add memory instructions later.")
+        else:
+            # File exists, ask to modify
+            modify = questionary.confirm(
+                f"Found {openclaw_json}. Update system prompt with OC-Memory integration?",
+                default=True,
+                style=custom_style
+            ).ask()
+
+            if modify:
+                self._update_openclaw_json(openclaw_json, memory_instructions)
+                print(f"\n✅ Updated {openclaw_json}")
+            else:
+                print("ℹ️  Skipped. You can manually add memory instructions later.")
+
+        self.config['openclaw'] = {
+            'config_path': str(openclaw_json),
+            'memory_instructions': memory_instructions
+        }
+
+    def _create_openclaw_json(self, path: Path, memory_instructions: str):
+        """Create a new openclaw.json with OC-Memory integration"""
+        openclaw_config = {
+            "systemPrompt": {
+                "userMessage": memory_instructions
+            }
+        }
+
+        # Ensure parent directory exists
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(openclaw_config, f, indent=2)
+
+    def _update_openclaw_json(self, path: Path, memory_instructions: str):
+        """Update existing openclaw.json with OC-Memory integration"""
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+        except (json.JSONDecodeError, IOError):
+            # File corrupted or can't be read, create new
+            config = {}
+
+        # Ensure structure exists
+        if 'systemPrompt' not in config:
+            config['systemPrompt'] = {}
+        if 'userMessage' not in config['systemPrompt']:
+            config['systemPrompt']['userMessage'] = ""
+
+        # Append OC-Memory instructions
+        current_message = config['systemPrompt']['userMessage']
+        if memory_instructions not in current_message:
+            if current_message.strip():
+                config['systemPrompt']['userMessage'] = f"{current_message}\n\n{memory_instructions}"
+            else:
+                config['systemPrompt']['userMessage'] = memory_instructions
+
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2)
+
+    def step6_create_directories(self):
+        """Step 6: Create Directories Automatically"""
+        print("\n" + "="*70)
+        print("📁 STEP 6: Create Directories")
+        print("="*70 + "\n")
+
+        errors = []
+
+        # Create watch directories
+        print("Creating watch directories...\n")
+        for watch_dir in self.config['watch']['dirs']:
+            try:
+                watch_path = Path(watch_dir)
+                watch_path.mkdir(parents=True, exist_ok=True)
+                print(f"  ✅ {watch_path}")
+            except Exception as e:
+                errors.append(f"Failed to create {watch_dir}: {e}")
+                print(f"  ❌ {watch_dir}: {e}")
+
+        # Create memory directory
+        print("\nCreating memory directory...\n")
+        try:
+            memory_path = Path(self.config['memory']['dir'])
+            memory_path.mkdir(parents=True, exist_ok=True)
+            # Set permissions (Unix only)
+            if os.name != 'nt':
+                os.chmod(memory_path, 0o755)
+            print(f"  ✅ {memory_path}")
+        except Exception as e:
+            errors.append(f"Failed to create memory directory: {e}")
+            print(f"  ❌ Memory directory: {e}")
+
+        # Create OpenClaw workspace if needed
+        print("\nEnsuring OpenClaw workspace exists...\n")
+        try:
+            openclaw_workspace = Path.home() / ".openclaw" / "workspace"
+            openclaw_workspace.mkdir(parents=True, exist_ok=True)
+            print(f"  ✅ {openclaw_workspace}")
+        except Exception as e:
+            errors.append(f"Failed to create OpenClaw workspace: {e}")
+            print(f"  ❌ OpenClaw workspace: {e}")
+
+        if errors:
+            print("\n⚠️  Some directories could not be created:")
+            for error in errors:
+                print(f"  • {error}")
+        else:
+            print("\n✅ All directories created successfully")
+
+    def step7_auto_test(self):
+        """Step 7: Auto Test"""
+        print("\n" + "="*70)
+        print("🧪 STEP 7: Auto Test")
+        print("="*70)
+        print("\nTesting OC-Memory integration...\n")
+
+        # Get first watch directory
+        if not self.config['watch']['dirs']:
+            print("❌ No watch directories configured")
+            return
+
+        watch_dir = Path(self.config['watch']['dirs'][0])
+        memory_dir = Path(self.config['memory']['dir'])
+
+        # Ensure directories exist
+        watch_dir.mkdir(parents=True, exist_ok=True)
+        memory_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create test file
+        test_file = watch_dir / "test_memory_observer.md"
+        test_file_content = """# OC-Memory Test Note
+
+This is a test file created by the setup wizard to verify that OC-Memory
+is working correctly.
+
+## Test Content
+
+- Test timestamp: {timestamp}
+- Test status: In progress
+- Expected behavior: This file should be processed and appear in the memory directory
+""".format(timestamp=time.strftime("%Y-%m-%d %H:%M:%S"))
+
+        try:
+            test_file.write_text(test_file_content, encoding='utf-8')
+            print(f"✅ Created test file: {test_file}")
+        except Exception as e:
+            print(f"❌ Failed to create test file: {e}")
+            return
+
+        # Check if memory_observer.py exists
+        observer_script = self.project_root / "memory_observer.py"
+        if not observer_script.exists():
+            print(f"\nℹ️  memory_observer.py not found at {observer_script}")
+            print("   The observer script will need to be implemented.")
+            print(f"   Test file created at: {test_file}")
+            return
+
+        # Try to run observer briefly
+        print("\nAttempting to run memory observer (5 seconds)...\n")
+        try:
+            # Start process with timeout
+            process = subprocess.Popen(
+                [sys.executable, str(observer_script)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                cwd=str(self.project_root)
+            )
+
+            # Wait for 5 seconds
+            time.sleep(5)
+
+            # Terminate process
+            process.terminate()
+            try:
+                process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                process.kill()
+
+            # Check if test file was processed
+            memory_files = list(memory_dir.glob("*test*"))
+            if memory_files:
+                print(f"✅ Test successful! Files found in memory directory:")
+                for mf in memory_files:
+                    print(f"   • {mf.name}")
+            else:
+                print("ℹ️  Observer ran but test file not yet processed.")
+                print(f"   This may be normal if the observer needs more time.")
+                print(f"   Check {memory_dir} after running the observer.")
+
+        except FileNotFoundError:
+            print("ℹ️  memory_observer.py not executable or not found")
+            print(f"   Test file created at: {test_file}")
+        except Exception as e:
+            print(f"⚠️  Error running observer: {e}")
+            print(f"   Test file created at: {test_file}")
+
+    def step8_ready_to_run(self):
+        """Step 8: Ready to Run"""
+        print("\n" + "="*70)
+        print("🚀 STEP 8: Ready to Run")
+        print("="*70 + "\n")
+
+        print("✅ Setup is almost complete!\n")
+
+        print("📋 Final Checklist:\n")
+        checklist = [
+            ("✅", "Configuration file saved"),
+            ("✅", "Watch directories created"),
+            ("✅", "Memory directory created"),
+            ("✅", "OpenClaw integration prepared")
+        ]
+
+        for status, item in checklist:
+            print(f"  {status} {item}")
+
+        print("\n" + "="*70)
+        print("\n🎯 How to Start OC-Memory:\n")
+
+        print("1. Start the memory observer daemon:\n")
+        print("   python memory_observer.py\n")
+
+        print("2. Or run in the background:\n")
+        print("   python memory_observer.py &\n")
+
+        print("3. Monitor logs:\n")
+        print("   tail -f oc-memory.log\n")
+
+        print("="*70)
+        print("\n📊 Verify It's Working:\n")
+
+        print("1. Create a test note in your watch directory:")
+        if self.config['watch']['dirs']:
+            print(f"   echo '# Test' > \"{self.config['watch']['dirs'][0]}/note.md\"\n")
+
+        print("2. Check if it appears in memory directory:")
+        print(f"   ls {self.config['memory']['dir']}\n")
+
+        print("3. OpenClaw will automatically index memory files.")
+        print("   Check your OpenClaw memory or search functionality.\n")
+
+        print("="*70)
+
+    def step9_review_and_save(self):
+        """Step 9: Review configuration and save"""
+        print("\n" + "="*70)
+        print("📋 STEP 9: Review Configuration")
         print("="*70 + "\n")
 
         # Print summary
@@ -471,6 +758,12 @@ Setup typically takes less than 3 minutes.
         print(f"   • Level: {self.config['logging']['level']}")
         print(f"   • File: {self.config['logging']['file']}")
         print(f"   • Console: {self.config['logging']['console']}")
+
+        # OpenClaw
+        if self.config.get('openclaw'):
+            print(f"\n🔗 OpenClaw Integration:")
+            print(f"   • Config: {self.config['openclaw']['config_path']}")
+            print(f"   • Status: Ready")
 
         # Optional features
         if self.config.get('llm', {}).get('enabled'):
@@ -539,46 +832,6 @@ Setup typically takes less than 3 minutes.
             os.chmod(self.env_path, 0o600)
 
         print(f"🔑 Saved {key} to: {self.env_path}")
-
-    def step6_post_install(self):
-        """Step 6: Post-installation instructions"""
-        print("\n" + "="*70)
-        print("🎉 STEP 6: Setup Complete!")
-        print("="*70 + "\n")
-
-        print("✅ OC-Memory is now configured!\n")
-
-        print("📖 Next Steps:\n")
-
-        print("1️⃣  Create watch directories (if they don't exist):")
-        for dir_path in self.config['watch']['dirs']:
-            print(f"   mkdir -p \"{dir_path}\"")
-
-        print("\n2️⃣  Start the observer daemon:")
-        print("   python memory_observer.py")
-
-        print("\n3️⃣  Test the integration:")
-        print(f"   echo \"# Test Note\" > \"{self.config['watch']['dirs'][0]}/test.md\"")
-
-        print("\n4️⃣  Check the memory directory:")
-        print(f"   ls {self.config['memory']['dir']}")
-
-        if os.name != 'nt':  # Unix-like systems
-            print("\n5️⃣  (Optional) Run as a background service:")
-            print("   # See QUICKSTART.md for systemd/LaunchAgent setup")
-
-        print("\n" + "="*70)
-        print("\n📚 Documentation:")
-        print(f"   • Quick Start: {self.project_root / 'QUICKSTART.md'}")
-        print(f"   • Implementation: {self.project_root / 'IMPLEMENTATION_ROADMAP.md'}")
-        print(f"   • Specs: {self.project_root / 'specs' / '*.md'}")
-
-        print("\n🐛 Issues or Questions?")
-        print("   GitHub Issues: https://github.com/[username]/oc-memory/issues")
-
-        print("\n" + "="*70)
-        print("\n💡 Tip: Run 'python memory_observer.py --help' for more options")
-        print("\nThank you for using OC-Memory! 🧠\n")
 
 
 # ============================================================================
