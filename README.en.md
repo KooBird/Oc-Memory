@@ -3,7 +3,7 @@
 Add persistent long-term memory to OpenClaw with 90-day+ conversation context retention.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10-3.14](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.14-blue.svg)](https://www.python.org/downloads/)
 [![Status: Production Ready](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)]()
 
 ---
@@ -77,7 +77,9 @@ Follow these steps in order. Each step shows what to do, what to expect, and how
 
 ### Prerequisites
 
-- Python 3.10 or higher
+- **Python 3.10 or higher** (3.10, 3.11, 3.12, 3.14 supported)
+  - Python 3.14 users: chromadb automatically excluded (uses OpenClaw built-in search)
+  - Earlier versions needing chromadb: see [chromadb setup guide](docs/CHROMADB_SETUP.md)
 - OpenClaw installed
 - Terminal/Command Line access
 
@@ -90,7 +92,12 @@ Follow these steps in order. Each step shows what to do, what to expect, and how
 git clone https://github.com/chaos1358/Oc-Memory.git
 cd Oc-Memory
 
-# Install Python dependencies
+# Install Python dependencies (virtual environment recommended)
+python3 -m venv venv
+source venv/bin/activate  # macOS/Linux
+# or
+venv\Scripts\activate     # Windows
+
 pip install -r requirements.txt
 ```
 
@@ -100,7 +107,15 @@ pip install -r requirements.txt
 Collecting openai>=1.0.0
 Collecting pyyaml>=6.0
 Collecting watchdog>=3.0.0
+Collecting questionary>=2.0.0
 ...
+Successfully installed (49 packages)
+```
+
+**Note:**
+- chromadb removed from v0.2.1+ due to Python 3.14 compatibility
+- Uses OpenClaw's built-in SQLite vector search instead
+- If you encounter errors during installation, see [Troubleshooting](#troubleshooting-installation)
 Successfully installed [packages]
 ```
 

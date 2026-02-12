@@ -26,7 +26,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Performance | ✅ Complete | 1374 files/sec, 0.31MB memory overhead for 100 files |
 | Setup Wizard | ✅ Complete | 8-step interactive configuration |
 | Monitoring | ✅ Complete | PerformanceMonitor, HealthChecker, ProcessMonitor classes |
-| CI/CD | ✅ Complete | GitHub Actions (6 matrix combinations: 2 OS × 3 Python versions) |
+| CI/CD | ✅ Complete | GitHub Actions (8 matrix combinations: 2 OS × 4 Python versions: 3.10/3.11/3.12/3.14) |
 
 ## Architecture
 
@@ -371,9 +371,10 @@ OC_MEMORY_RETRY_DELAY=2
 - End-to-end memory_observer daemon workflow
 
 **CI/CD Tests** (Automated):
-- Runs on: Ubuntu + macOS, Python 3.10/3.11/3.12
+- Runs on: Ubuntu + macOS, Python 3.10/3.11/3.12/3.14
 - Enforces: 75% minimum coverage
 - Linting: flake8 with E9, F63, F7, F82 checks
+- Note: chromadb removed v0.2.1+ (onnxruntime unavailable for Python 3.14)
 
 ### Running Tests
 

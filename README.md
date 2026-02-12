@@ -3,7 +3,7 @@
 OpenClaw에 장기 메모리를 추가하여 90일 이상의 대화 컨텍스트를 유지합니다.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10-3.14](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.14-blue.svg)](https://www.python.org/downloads/)
 [![Status: Production Ready](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)]()
 
 ---
@@ -77,7 +77,9 @@ OpenClaw 메모리 (~/.openclaw/workspace/memory/)
 
 ### 필수 요구 사항
 
-- Python 3.10 이상
+- **Python 3.10 이상** (3.10, 3.11, 3.12, 3.14 지원)
+  - Python 3.14 사용자: 자동으로 chromadb 제외 (OpenClaw 기본 검색 사용)
+  - 이전 버전에서 chromadb 필요 시: [chromadb 설정 가이드](docs/CHROMADB_SETUP.md) 참고
 - OpenClaw 설치됨
 - 터미널/명령줄 액세스
 
@@ -90,7 +92,12 @@ OpenClaw 메모리 (~/.openclaw/workspace/memory/)
 git clone https://github.com/chaos1358/Oc-Memory.git
 cd Oc-Memory
 
-# Python 종속성 설치
+# Python 종속성 설치 (가상 환경 활성화 권장)
+python3 -m venv venv
+source venv/bin/activate  # macOS/Linux
+# 또는
+venv\Scripts\activate     # Windows
+
 pip install -r requirements.txt
 ```
 
@@ -100,7 +107,15 @@ pip install -r requirements.txt
 Collecting openai>=1.0.0
 Collecting pyyaml>=6.0
 Collecting watchdog>=3.0.0
+Collecting questionary>=2.0.0
 ...
+Successfully installed (49 packages)
+```
+
+**참고:**
+- chromadb는 v0.2.1+부터 Python 3.14 호환성 이유로 제거됨
+- 대신 OpenClaw의 기본 SQLite 벡터 검색 사용
+- 설치 중 오류가 발생하면 [문제 해결 가이드](#문제-해결)를 참고하세요
 Successfully installed [packages]
 ```
 

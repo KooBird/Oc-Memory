@@ -5,7 +5,10 @@ pyyaml>=6.0                # Configuration files
 python-dotenv>=1.0.0       # Environment variables
 
 # Memory Storage
-chromadb>=0.4.0            # Vector database
+# NOTE: chromadb removed (v0.2.1+)
+# Reason: onnxruntime dependency not available for Python 3.14
+# Solution: Use OpenClaw's built-in SQLite vector search instead
+# For Python 3.10-3.12 users who need chromadb, see: docs/CHROMADB_SETUP.md
 markdown>=3.5.0            # Markdown processing
 
 # Optional: Obsidian Integration

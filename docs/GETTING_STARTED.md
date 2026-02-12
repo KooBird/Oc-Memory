@@ -7,8 +7,17 @@ OC-Memory를 5분 이내에 설치하고 시작할 수 있습니다! 이 가이�
 시작하기 전에 다음을 확인하세요:
 
 - **Python 3.10 이상** - 확인하기: `python3 --version`
+  - 지원 버전: 3.10, 3.11, 3.12, 3.14
+  - Python 3.14 사용 시: chromadb 자동 제외 (OpenClaw 기본 검색 사용)
+  - ⚠️ 주의: Python 3.9 이하는 지원되지 않습니다
 - **pip** - Python 3.9 이상에 포함됨
 - **가상 환경** (권장) - Python에 내장됨
+  ```bash
+  python3 -m venv venv
+  source venv/bin/activate  # macOS/Linux
+  # 또는
+  venv\Scripts\activate     # Windows
+  ```
 - **디스크 공간** - 종속성 및 로그를 위해 최소 100MB 여유 공간
 - **OpenClaw 설치** - 메모리 통합에 필요 (참고: [OpenClaw 저장소](https://github.com/openclaw-ai/openclaw))
 
@@ -46,10 +55,16 @@ venv\Scripts\activate             # Windows에서
 ### 3단계: 종속성 설치
 
 ```bash
+# 가상 환경이 활성화되었는지 확인 (프롬프트에 (venv) 표시)
 pip install -r requirements.txt
 ```
 
-이는 `watchdog` (파일 모니터링), `pyyaml` (구성) 등을 포함한 모든 필수 패키지를 설치합니다.
+이는 `watchdog` (파일 모니터링), `pyyaml` (구성) 등을 포함한 필수 패키지를 설치합니다.
+
+**v0.2.1 변경사항:**
+- ❌ chromadb 제거 (Python 3.14 호환성)
+- ✅ OpenClaw 기본 SQLite 벡터 검색 사용
+- 📦 설치 패키지 49개 (이전 보다 적음)
 
 ### 4단계: 설치 확인
 

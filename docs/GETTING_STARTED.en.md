@@ -7,8 +7,17 @@ Get up and running with OC-Memory in under 5 minutes! This guide covers installa
 Before you begin, ensure you have:
 
 - **Python 3.10 or higher** - Check with: `python3 --version`
+  - Supported versions: 3.10, 3.11, 3.12, 3.14
+  - Python 3.14 users: chromadb automatically excluded (uses OpenClaw built-in search)
+  - ⚠️ Important: Python 3.9 and below are not supported
 - **pip** - Included with Python 3.9+
 - **Virtual environment** (recommended) - Built into Python
+  ```bash
+  python3 -m venv venv
+  source venv/bin/activate    # macOS/Linux
+  # or
+  venv\Scripts\activate       # Windows
+  ```
 - **Disk space** - At least 100MB free for dependencies and logs
 - **OpenClaw installed** - Required for memory integration (see [OpenClaw Repository](https://github.com/openclaw-ai/openclaw))
 
@@ -46,10 +55,16 @@ You should see `(venv)` at the start of your terminal prompt.
 ### Step 3: Install Dependencies
 
 ```bash
+# Make sure virtual environment is active (you should see (venv) in your prompt)
 pip install -r requirements.txt
 ```
 
 This installs all required packages including `watchdog` (file monitoring), `pyyaml` (configuration), and others.
+
+**v0.2.1 Changes:**
+- ❌ chromadb removed (Python 3.14 compatibility)
+- ✅ Uses OpenClaw built-in SQLite vector search
+- 📦 49 packages total (fewer than before)
 
 ### Step 4: Verify Installation
 
