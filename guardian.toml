@@ -15,7 +15,7 @@ auto_restart = true
 restart_delay = 3
 
 [processes.oc-memory.env]
-GOOGLE_API_KEY = "AIzaSyAGXcG2oFAD1TQyVQpherKskjXHUc75pGs"
+# GOOGLE_API_KEY is injected via systemd EnvironmentFile
 
 [processes.oc-memory.health]
 process_alive = true
