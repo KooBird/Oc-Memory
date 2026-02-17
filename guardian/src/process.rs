@@ -138,7 +138,7 @@ impl ProcessManager {
         }
 
         // Check if the process is already running (e.g., managed by systemd)
-        if Self::is_already_running(&proc.config.command).await {
+        if Self::is_already_running(&proc.config.command, &proc.config.args).await {
             info!(
                 "Process '{}' is already running externally, skipping guardian management",
                 name
@@ -435,15 +435,22 @@ impl ProcessManager {
     }
 
     /// Check if a command is already running (not spawned by us)
-    async fn is_already_running(command: &str) -> bool {
+    async fn is_already_running(command: &str, args: &[String]) -> bool {
+        // Build a search pattern from command + first arg for precision
         let bin_name = Path::new(command)
             .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or(command);
 
+        let pattern = if let Some(first_arg) = args.first() {
+            format!("{} {}", bin_name, first_arg)
+        } else {
+            bin_name.to_string()
+        };
+
         let output = tokio::process::Command::new("pgrep")
             .arg("-f")
-            .arg(bin_name)
+            .arg(&pattern)
             .output()
             .await;
 
@@ -453,8 +460,8 @@ impl ProcessManager {
                 let count = pids.trim().lines().count();
                 if count > 0 {
                     info!(
-                        "Found {} existing '{}' process(es), skipping guardian spawn",
-                        count, bin_name
+                        "Found {} existing process(es) matching '{}', skipping guardian spawn",
+                        count, pattern
                     );
                     return true;
                 }
