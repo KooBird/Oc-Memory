@@ -137,6 +137,17 @@ impl ProcessManager {
             return Ok(());
         }
 
+        // Check if the process is already running (e.g., managed by systemd)
+        if Self::is_already_running(&proc.config.command).await {
+            info!(
+                "Process '{}' is already running externally, skipping guardian management",
+                name
+            );
+            proc.state = ProcessState::Running;
+            proc.config.auto_restart = false; // Don't try to restart externally managed processes
+            return Ok(());
+        }
+
         proc.state = ProcessState::Starting;
         info!("Starting process '{}'...", name);
 
@@ -421,6 +432,35 @@ impl ProcessManager {
             port,
             timeout
         )
+    }
+
+    /// Check if a command is already running (not spawned by us)
+    async fn is_already_running(command: &str) -> bool {
+        let bin_name = Path::new(command)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or(command);
+
+        let output = tokio::process::Command::new("pgrep")
+            .arg("-f")
+            .arg(bin_name)
+            .output()
+            .await;
+
+        if let Ok(output) = output {
+            if output.status.success() {
+                let pids = String::from_utf8_lossy(&output.stdout);
+                let count = pids.trim().lines().count();
+                if count > 0 {
+                    info!(
+                        "Found {} existing '{}' process(es), skipping guardian spawn",
+                        count, bin_name
+                    );
+                    return true;
+                }
+            }
+        }
+        false
     }
 
     /// Reap zombie children by calling try_wait() on all running processes.

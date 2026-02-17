@@ -1,0 +1,146 @@
+# OC-Guardian Configuration
+
+# ============================================================================
+# Process Definitions
+# ============================================================================
+# Note: OpenClaw is managed by its own systemd user service, not Guardian.
+
+[processes.oc-memory]
+name = "oc-memory"
+command = "/home/ayoon/oc-memory/.venv/bin/python"
+args = ["memory_observer.py", "--config", "/home/ayoon/oc-memory/config.yaml"]
+working_dir = "/home/ayoon/oc-memory"
+
+auto_restart = true
+restart_delay = 3
+
+[processes.oc-memory.env]
+GOOGLE_API_KEY = "AIzaSyAGXcG2oFAD1TQyVQpherKskjXHUc75pGs"
+
+[processes.oc-memory.health]
+process_alive = true
+log_file = "/home/ayoon/oc-memory/oc-memory.log"
+log_activity_timeout = 180
+max_memory_mb = 512
+max_cpu_percent = 50
+check_interval = 30
+
+[processes.oc-memory.ready]
+method = "log"
+pattern = "Observer started|Monitoring for file changes"
+timeout = 30
+
+
+# ============================================================================
+# Recovery
+# ============================================================================
+
+[recovery]
+max_restarts = 5
+restart_window = 300
+backoff_strategy = "exponential"
+initial_backoff = 1
+max_backoff = 60
+give_up_action = "notify"
+
+[[recovery.scenarios]]
+name = "process_crash"
+trigger = "exit_code != 0"
+action = "restart_with_dependencies"
+cascade = true
+notify = true
+
+[[recovery.scenarios]]
+name = "unresponsive"
+trigger = "log_activity_timeout"
+action = "graceful_restart"
+grace_period = 30
+notify = true
+
+[[recovery.scenarios]]
+name = "memory_leak"
+trigger = "memory > max_memory_mb"
+action = "graceful_restart"
+cascade = true
+notify = true
+
+[[recovery.scenarios]]
+name = "llm_error"
+trigger = "log_pattern = 'LLM.*error|API.*failed'"
+action = "log_warning"
+notify = false
+
+
+# ============================================================================
+# Logging
+# ============================================================================
+
+[logging]
+output = "/home/ayoon/oc-memory/guardian.log"
+level = "info"
+rotation = "daily"
+max_size = "50MB"
+max_files = 7
+format = "json"
+timestamp_format = "rfc3339"
+capture_stdout = true
+capture_stderr = true
+
+[[logging.managed_logs.files]]
+path = "/home/ayoon/oc-memory/oc-memory.log"
+rotation = "daily"
+max_size = "100MB"
+max_files = 7
+
+
+# ============================================================================
+# Memory Compression
+# ============================================================================
+
+[memory.compression]
+enabled = true
+token_threshold = 30000
+schedule_enabled = true
+schedule = "daily"
+schedule_time = "03:00"
+compression_target = 0.5
+min_compression_ratio = 5.0
+target_files = [
+    "/home/ayoon/.openclaw/workspace/memory/active_memory.md",
+    "/home/ayoon/oc-memory/oc-memory.log"
+]
+method = "llm"
+llm_model = "gemini-2.5-flash"
+llm_api_key_env = "GOOGLE_API_KEY"
+max_retries = 3
+retry_delay = 5
+log_compression_stats = true
+
+
+# ============================================================================
+# Notifications (TODO: 이메일 설정)
+# ============================================================================
+
+[notifications]
+enabled = false
+
+[notifications.email]
+smtp_server = "smtp.gmail.com"
+smtp_port = 587
+smtp_tls = true
+smtp_user = "koo.bird.assistant@gmail.com"
+smtp_password_env = "SMTP_PASSWORD"
+from = "koo.bird.assistant@gmail.com"
+to = ["sky417@gmail.com"]
+events = ["crash", "give_up", "config_error", "memory_leak"]
+
+
+# ============================================================================
+# Advanced
+# ============================================================================
+
+[advanced]
+supervisor_interval = 5
+spawn_timeout = 30
+shutdown_grace_period = 60
+pid_file = "/home/ayoon/oc-memory/guardian.pid"
