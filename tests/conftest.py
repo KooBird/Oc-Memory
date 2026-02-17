@@ -1,136 +1,103 @@
 """
-Pytest configuration and fixtures for OC-Memory tests
-Shared fixtures and configuration for all test modules
+Shared test fixtures for OC-Memory test suite
 """
 
-import pytest
+import os
 import tempfile
 from pathlib import Path
-import yaml
 
-
-@pytest.fixture(scope="session")
-def test_data_dir():
-    """Get the test data directory"""
-    return Path(__file__).parent / "data"
+import pytest
 
 
 @pytest.fixture
-def sample_yaml_config():
-    """Sample YAML configuration for testing"""
+def temp_dir():
+    """Provide a temporary directory that's cleaned up after test"""
+    with tempfile.TemporaryDirectory() as d:
+        yield Path(d)
+
+
+@pytest.fixture
+def sample_config(temp_dir):
+    """Provide a sample configuration dictionary"""
     return {
         'watch': {
-            'dirs': ['~/Documents/notes', '~/Projects'],
+            'dirs': [str(temp_dir / 'watch')],
             'recursive': True,
-            'poll_interval': 1.0
+            'poll_interval': 1.0,
         },
         'memory': {
-            'dir': '~/.openclaw/workspace/memory',
+            'dir': str(temp_dir / 'memory'),
             'auto_categorize': True,
-            'max_file_size': 5242880
+            'max_file_size': 10485760,
         },
         'logging': {
-            'level': 'INFO',
-            'file': 'oc-memory.log',
-            'console': True
+            'level': 'DEBUG',
+            'file': str(temp_dir / 'test.log'),
+            'console': False,
         },
         'hot_memory': {
             'ttl_days': 90,
-            'max_observations': 10000
+            'max_observations': 10000,
         },
         'llm': {
             'provider': 'openai',
             'model': 'gpt-4o-mini',
-            'enabled': False
+            'api_key_env': 'OPENAI_API_KEY',
+            'enabled': False,
         },
-        'obsidian': {
-            'enabled': False
-        },
-        'dropbox': {
-            'enabled': False
-        }
+        'obsidian': {'enabled': False},
+        'dropbox': {'enabled': False},
     }
 
 
 @pytest.fixture
-def temp_yaml_file(sample_yaml_config):
-    """Create a temporary YAML file with sample config"""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
-        yaml.dump(sample_yaml_config, f)
-        temp_path = f.name
-
-    yield temp_path
-
-    # Cleanup
-    Path(temp_path).unlink()
+def sample_config_file(temp_dir, sample_config):
+    """Create a sample config.yaml file and return its path"""
+    import yaml
+    config_path = temp_dir / 'config.yaml'
+    with open(config_path, 'w') as f:
+        yaml.dump(sample_config, f)
+    return config_path
 
 
 @pytest.fixture
-def temp_markdown_file():
-    """Create a temporary markdown file"""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
-        f.write("""# Test Document
-
-## Section 1
-Content for section 1
-
-## Section 2
-Content for section 2
-""")
-        temp_path = f.name
-
-    yield Path(temp_path)
-
-    # Cleanup
-    Path(temp_path).unlink()
+def memory_dir(temp_dir):
+    """Provide a temporary memory directory"""
+    d = temp_dir / 'memory'
+    d.mkdir(parents=True)
+    return d
 
 
 @pytest.fixture
-def temp_directory():
-    """Create a temporary directory"""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        yield Path(temp_dir)
+def watch_dir(temp_dir):
+    """Provide a temporary watch directory"""
+    d = temp_dir / 'watch'
+    d.mkdir(parents=True)
+    return d
 
 
 @pytest.fixture
-def nested_directory():
-    """Create a nested directory structure"""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        base = Path(temp_dir)
-        (base / 'level1').mkdir()
-        (base / 'level1' / 'level2').mkdir()
-        (base / 'level1' / 'level2' / 'level3').mkdir()
-        yield base
+def sample_markdown():
+    """Provide sample markdown content"""
+    return """# Test Note
+
+## Overview
+This is a test memory file for unit testing.
+
+## Key Points
+- Point 1: Important fact about the project
+- Point 2: User prefers Python over JavaScript
+- Point 3: Decision to use ChromaDB for vector storage
+"""
 
 
-def pytest_configure(config):
-    """Configure pytest plugins and markers"""
-    config.addinivalue_line(
-        "markers", "unit: mark test as a unit test"
-    )
-    config.addinivalue_line(
-        "markers", "integration: mark test as an integration test"
-    )
-    config.addinivalue_line(
-        "markers", "slow: mark test as slow running"
-    )
-
-
-def pytest_collection_modifyitems(config, items):
-    """Modify test collection to add markers automatically"""
-    for item in items:
-        # Mark integration tests
-        if "integration" in item.nodeid.lower():
-            item.add_marker(pytest.mark.integration)
-
-        # Mark slow tests
-        if item.get_closest_marker("slow"):
-            pass  # Already marked
-
-        # Mark by module
-        if "config" in item.nodeid:
-            item.add_marker(pytest.mark.config)
-        elif "file_watcher" in item.nodeid:
-            item.add_marker(pytest.mark.file_watcher)
-        elif "memory_writer" in item.nodeid:
-            item.add_marker(pytest.mark.memory_writer)
+@pytest.fixture
+def sample_messages():
+    """Provide sample conversation messages"""
+    return [
+        {"role": "user", "content": "I prefer using Python for this project."},
+        {"role": "assistant", "content": "Got it, we'll use Python."},
+        {"role": "user", "content": "Let's use ChromaDB for vector storage. The deadline is March 15."},
+        {"role": "assistant", "content": "I'll set up ChromaDB. March 15 noted as deadline."},
+        {"role": "user", "content": "Always use type hints in the code."},
+    ]

@@ -30,3 +30,7 @@ Thumbs.db
 # Config (keep example)
 config.yaml
 !config.example.yaml
+
+.venv/
+.chromadb/
+guardian/target/
